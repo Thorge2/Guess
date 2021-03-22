@@ -36,8 +36,10 @@ const Index = () => {
       <h3>Players</h3>
 
       <ul>
-        {players.map((p) => (
-          <li>{p.name}</li>
+        {players.map((p, i) => (
+          <li key={i}>
+            {p.name} | {p.id}
+          </li>
         ))}
       </ul>
     </div>

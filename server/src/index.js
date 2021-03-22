@@ -91,9 +91,42 @@ io.on("connection", (socket) => {
     console.log(games);
   });
 
-  socket.on("buzz", (...args) => {});
+  socket.on("buzzer", (...args) => {});
 
   socket.on("reply", (...args) => {});
+
+  socket.on("delete", (...args) => {
+    // check args
+    if (args.length < 3) {
+      return;
+    }
+
+    const game_id = args[0];
+    const admin_id = args[1];
+
+    if (!admin_id || !game_id) {
+      return;
+    }
+
+    const callback = args[args.length - 1];
+
+    // check if game exists
+    if (!games.has(game_id)) {
+      return;
+    }
+
+    // check if admin
+    const game = games.get(game_id);
+    if (game.admin !== admin_id) {
+      return;
+    }
+
+    // delete game
+    games.delete(game_id);
+
+    // send update to all
+    io.to(game_id).emit("deleted");
+  });
 });
 
 const PORT = process.env.PORT || 4000;

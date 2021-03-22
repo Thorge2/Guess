@@ -5,12 +5,20 @@ const Join = () => {
   const [name, setName] = useState("");
   const [game, setGame] = useState("");
   const [data, setData] = useState();
+  const [players, setPlayers] = useState([]);
 
   const join = () => {
     const socket = io("http://localhost:4000");
-    socket.emit("join", game, name, (data) => {
+    socket.on("connect", () => {
+      socket.emit("join", game, name, (data) => {
+        console.log(data);
+        setData(data);
+      });
+    });
+
+    socket.on("update", (data) => {
       console.log(data);
-      setData(data);
+      setPlayers(data);
     });
   };
 
@@ -50,6 +58,14 @@ const Join = () => {
       <hr />
 
       <h3>Players</h3>
+
+      <ul>
+        {players.map((p, i) => (
+          <li key={i}>
+            {p.name} | {p.id}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };

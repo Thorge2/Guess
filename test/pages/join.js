@@ -5,20 +5,28 @@ const Join = () => {
   const [name, setName] = useState("");
   const [game, setGame] = useState("");
   const [data, setData] = useState();
+  const [socket, setSocket] = useState();
   const [players, setPlayers] = useState([]);
 
   const join = () => {
-    const socket = io("http://localhost:4000");
-    socket.on("connect", () => {
-      socket.emit("join", game, name, (data) => {
-        console.log(data);
+    const sock = io("http://localhost:4000");
+    setSocket(sock);
+    sock.on("connect", () => {
+      sock.emit("join", game, name, (data) => {
         setData(data);
       });
     });
 
-    socket.on("update", (data) => {
-      console.log(data);
+    sock.on("update", (data) => {
       setPlayers(data);
+    });
+
+    sock.on("buzzed", (data) => {
+      console.log(data);
+    });
+
+    sock.on("deleted", () => {
+      console.log("deleted");
     });
   };
 
@@ -48,6 +56,7 @@ const Join = () => {
       <br />
 
       <button onClick={join}>Join</button>
+      <button onClick={() => socket.emit("buzzer", game, data.id)}>Buzz</button>
 
       <hr />
 
@@ -62,7 +71,7 @@ const Join = () => {
       <ul>
         {players.map((p, i) => (
           <li key={i}>
-            {p.name} | {p.id}
+            {p.name} | {p.score}
           </li>
         ))}
       </ul>

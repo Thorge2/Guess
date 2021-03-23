@@ -44,8 +44,6 @@ io.on("connection", (socket) => {
       game: game_id,
       player: game.admin,
     });
-
-    console.log(games);
   });
 
   socket.on("join", (...args) => {
@@ -86,18 +84,119 @@ io.on("connection", (socket) => {
     callback(player);
 
     // update player list for client
-    io.to(game_id).emit("update", game.players);
-
-    console.log(games);
+    io.to(game_id).emit(
+      "update",
+      game.players.map((p) => {
+        return { name: p.name, score: p.score };
+      })
+    );
   });
 
-  socket.on("buzzer", (...args) => {});
+  socket.on("buzzer", (...args) => {
+    // check args
+    if (args.length < 2) {
+      return;
+    }
 
-  socket.on("reply", (...args) => {});
+    const game_id = args[0];
+    const user_id = args[1];
+    if (!user_id || !game_id) {
+      return;
+    }
+
+    // check if user exists
+    if (!games.has(game_id)) {
+      return;
+    }
+    const game = games.get(game_id);
+
+    // check if no one has buzzered
+    if (game.buzzered.length !== 0) {
+      return;
+    }
+
+    const player = game.players.find((p) => p.id === user_id);
+    if (!player) {
+      return;
+    }
+
+    game.buzzered = player.id;
+
+    io.to(game_id).emit("buzzed", player.name);
+  });
+
+  socket.on("reply", (...args) => {
+    // check args
+    if (args.length < 3) {
+      return;
+    }
+    const game_id = args[0];
+    const admin_id = args[1];
+    const method = args[2];
+
+    if (!game_id || !method || !admin_id) {
+      return;
+    }
+
+    // check if game exists
+    if (!games.has(game_id)) {
+      return;
+    }
+    const game = games.get(game_id);
+
+    // check if buzzered
+    if (game.buzzered.length === 0) {
+      return;
+    }
+
+    // check if the admin id is valid
+    if (admin_id !== game.admin) {
+      return;
+    }
+
+    // parse method
+    let adder = 0;
+    switch (method) {
+      case "+1":
+        adder = 1;
+        break;
+      case "+2":
+        adder = 2;
+        break;
+      case "-1":
+        adder = -1;
+        break;
+      case "0":
+        adder = 0;
+        break;
+      default:
+        return;
+    }
+
+    // update score
+    game.players.map((p) => {
+      if (p.id === game.buzzered) {
+        p.score += adder;
+      }
+    });
+
+    console.log(game);
+
+    // "unbuzzer"
+    game.buzzered = "";
+
+    //send update
+    io.to(game_id).emit(
+      "update",
+      game.players.map((p) => {
+        return { name: p.name, score: p.score };
+      })
+    );
+  });
 
   socket.on("delete", (...args) => {
     // check args
-    if (args.length < 3) {
+    if (args.length < 2) {
       return;
     }
 
@@ -107,8 +206,6 @@ io.on("connection", (socket) => {
     if (!admin_id || !game_id) {
       return;
     }
-
-    const callback = args[args.length - 1];
 
     // check if game exists
     if (!games.has(game_id)) {

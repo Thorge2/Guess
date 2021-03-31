@@ -1,3 +1,0 @@
-<h1>About</h1>
-
-<p>This is a multiplayer guessing game!</p>

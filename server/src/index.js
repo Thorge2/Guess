@@ -3,6 +3,10 @@ import cors from "cors";
 import http from "http";
 import socketio from "socket.io";
 import { v4 as uuid } from "uuid";
+import jwt from "jsonwebtoken";
+import { config } from "dotenv";
+
+config();
 
 const app = express();
 app.use(express.json());
@@ -23,12 +27,10 @@ const io = socketio(server, {
 });
 
 io.on("connection", (socket) => {
-  socket.on("create", (...args) => {
-    const callback = args[args.length - 1];
-
+  socket.on("create", () => {
     // construct game object and store it
     const game = {
-      admin: get_id(),
+      admin_id: get_id(),
       players: [],
       buzzered: "",
     };
@@ -39,27 +41,25 @@ io.on("connection", (socket) => {
     // join the user in the game room
     socket.join(game_id);
 
+    // create admin token
+    const admin_token = jwt.sign({ user_id: game.admin_id }, process.env.SALT);
+
     // send game data to user
-    callback({
-      game: game_id,
-      player: game.admin,
+    socket.emit("created", {
+      game_id,
+      admin: {
+        id: game.admin_id,
+        token: admin_token,
+      },
     });
   });
 
-  socket.on("join", (...args) => {
-    // check args
-    if (args.length < 3) {
+  socket.on("join", ({ username, game_id }) => {
+    if (!username || !game_id) {
       return;
     }
 
-    const game_id = args[0];
-    const user_name = args[1];
-
-    if (!user_name || !game_id) {
-      return;
-    }
-
-    const callback = args[args.length - 1];
+    console.log(username);
 
     // check if game exists
     if (!games.has(game_id)) {
@@ -69,7 +69,7 @@ io.on("connection", (socket) => {
     // create player object
     const player = {
       id: get_id(),
-      name: user_name,
+      name: username,
       score: 0,
     };
 
@@ -81,34 +81,26 @@ io.on("connection", (socket) => {
     socket.join(game_id);
 
     // send back player data
-    callback(player);
+    socket.emit("joined", {
+      id: player.id,
+      name: player.name,
+      token: jwt.sign({ user_id: player.id }, process.env.SALT),
+    });
 
     // update player list for client
-    io.to(game_id).emit(
-      "update",
-      game.players.map((p) => {
-        return { name: p.name, score: p.score };
-      })
-    );
+    io.to(game_id).emit("update", game.players);
   });
 
-  socket.on("buzzer", (...args) => {
-    // check args
-    if (args.length < 2) {
-      return;
-    }
+  socket.on("buzzer", ({ user_token, game_id }) => {
+    const { user_id } = jwt.verify(user_token, process.env.SALT);
 
-    const game_id = args[0];
-    const user_id = args[1];
-    if (!user_id || !game_id) {
-      return;
-    }
-
-    // check if user exists
+    // check if game exists
     if (!games.has(game_id)) {
       return;
     }
     const game = games.get(game_id);
+
+    console.log(user_id);
 
     // check if no one has buzzered
     if (game.buzzered.length !== 0) {
@@ -122,21 +114,14 @@ io.on("connection", (socket) => {
 
     game.buzzered = player.id;
 
-    io.to(game_id).emit("buzzed", player.name);
+    io.to(game_id).emit("buzzered", { id: player.id, name: player.name });
   });
 
-  socket.on("reply", (...args) => {
-    // check args
-    if (args.length < 3) {
-      return;
-    }
-    const game_id = args[0];
-    const admin_id = args[1];
-    const method = args[2];
+  socket.on("reply", ({ game_id, admin_token, method }) => {
+    // verify admin
+    const admin_id = jwt.verify(admin_token, process.env.SALT).user_id;
 
-    if (!game_id || !method || !admin_id) {
-      return;
-    }
+    console.log(admin_id);
 
     // check if game exists
     if (!games.has(game_id)) {
@@ -150,7 +135,7 @@ io.on("connection", (socket) => {
     }
 
     // check if the admin id is valid
-    if (admin_id !== game.admin) {
+    if (admin_id !== game.admin.id) {
       return;
     }
 
@@ -180,32 +165,16 @@ io.on("connection", (socket) => {
       }
     });
 
-    console.log(game);
-
     // "unbuzzer"
     game.buzzered = "";
 
     //send update
-    io.to(game_id).emit(
-      "update",
-      game.players.map((p) => {
-        return { name: p.name, score: p.score };
-      })
-    );
+    io.to(game_id).emit("update", game.players);
   });
 
-  socket.on("delete", (...args) => {
-    // check args
-    if (args.length < 2) {
-      return;
-    }
-
-    const game_id = args[0];
-    const admin_id = args[1];
-
-    if (!admin_id || !game_id) {
-      return;
-    }
+  socket.on("delete", ({ game_id, admin_token }) => {
+    // verify admin
+    const admin_id = jwt.verify(admin_token, process.env.SALT);
 
     // check if game exists
     if (!games.has(game_id)) {

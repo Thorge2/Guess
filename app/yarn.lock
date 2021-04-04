@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@popperjs/core@^2.6.0":
+  version "2.9.2"
+  resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.9.2.tgz#adea7b6953cbb34651766b0548468e743c6a2353"
+  integrity sha512-VZMYa7+fXHdwIq1TDhSXoVmSPEGM/aa+6Aiq3nVVJ9bXr24zScr+NlKFKC3iPljA7ho/GAZr+d2jOf5GIRC30Q==
+
 "@rollup/pluginutils@^4.1.0":
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/@rollup/pluginutils/-/pluginutils-4.1.0.tgz#0dcc61c780e39257554feb7f77207dceca13c838"
@@ -304,6 +309,13 @@ svelte@^3.29.0:
   version "3.35.0"
   resolved "https://registry.yarnpkg.com/svelte/-/svelte-3.35.0.tgz#e0d0ba60c4852181c2b4fd851194be6fda493e65"
   integrity sha512-gknlZkR2sXheu/X+B7dDImwANVvK1R0QGQLd8CNIfxxGPeXBmePnxfzb6fWwTQRsYQG7lYkZXvpXJvxvpsoB7g==
+
+sveltestrap@^3.14.0:
+  version "3.14.0"
+  resolved "https://registry.yarnpkg.com/sveltestrap/-/sveltestrap-3.14.0.tgz#890bd9b2929ef0f6cf51cfada05177642d236517"
+  integrity sha512-tg4kPiCXGxDW5DVthE42HW/B4t5Msi9yewzSsFGmjbs/S6HfLGuqq4XV7llVtoCZDG2vh0wsW6bWcvIfkDKMag==
+  dependencies:
+    "@popperjs/core" "^2.6.0"
 
 vite@^2.1.0:
   version "2.1.3"

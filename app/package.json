@@ -17,6 +17,7 @@
 		"node": ">= 12.17.0"
 	},
 	"dependencies": {
-		"socket.io-client": "^4.0.0"
+		"socket.io-client": "^4.0.0",
+		"sveltestrap": "^3.14.0"
 	}
 }
